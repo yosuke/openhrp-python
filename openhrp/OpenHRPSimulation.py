@@ -152,7 +152,7 @@ class OpenHRPSimulation:
 def main():
     usage = '''Usage: %prog [options]
 Control simulation from command line.'''
-    #parser = OptionParser(usage=usage, version=OPENHRP_VERSION)
+    #parser = OptionParser(usage=usage, version=__version__)
     parser = OptionParser(usage=usage)
     parser.add_option('-p', '--project', dest='projectfile', metavar='FILE', help='load project from FILE')
     parser.add_option('-r', '--run', dest='run', metavar='TIME',

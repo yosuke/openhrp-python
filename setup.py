@@ -18,11 +18,12 @@ openhrp install script.
 '''
 
 
+from setuptools import setup
+from setuptools import find_packages
 from distutils import errors
 from distutils import log
 from distutils import util
 from distutils.cmd import Command
-from distutils.core import setup
 from distutils.command import build
 import os
 import os.path
@@ -56,7 +57,7 @@ class BuildIDL(Command):
         if not self.omniidl:
             self.omniidl = 'omniidl'
         if not self.idl_dir:
-            self.idl_dir = os.path.join(os.getcwd(), 'openhrp', 'hrpidl')
+            self.idl_dir = os.path.join(os.getcwd(), 'openhrp', 'idl')
 
     def compile_idl(self, cmd, params, files):
         log.info('{0} {1} {2}'.format(cmd, ' '.join(params), ' '.join(files)))
@@ -120,9 +121,12 @@ setup(name='openhrp',
           'Topic :: Software Development',
           ],
       packages=['openhrp',
-                'openhrp.hrpidl',
-                'openhrp.hrpidl.OpenHRP',
-                'openhrp.hrpidl.OpenHRP__POA'],
+                'openhrp.idl',
+                'openhrp.idl.OpenHRP',
+                'openhrp.idl.OpenHRP__POA'],
+      entry_points={
+        'console_scripts': ['hrp = openhrp.OpenHRPSimulation:main']
+        },
       cmdclass={'build':CustomBuild, 'build_idl': BuildIDL}
       )
 

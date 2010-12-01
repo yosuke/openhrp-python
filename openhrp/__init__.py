@@ -29,6 +29,12 @@ del os
 del sys
 
 
-OPENHRP_VERSION = '0.0.1'
+__version__ = '0.0.1'
+
+from OpenHRPSimulation import *
+from SimulationItem import *
+from ModelItem import *
+from CollisionPairItem import *
+from utils import *
 
 # vim: tw=79
