@@ -43,7 +43,10 @@ class OpenHRPSimulation:
         self.sim = None
         
         # initialize CORBA
-        self.orb = CORBA.ORB_init(sys.argv, CORBA.ORB_ID)
+        self.orb = CORBA.ORB_init([sys.argv[0],
+                                   "-ORBInitRef",
+                                   "NameService=corbaloc::localhost:2809/NameService"],
+                                   CORBA.ORB_ID)
 
         # find CORBA name server
         nsobj = self.orb.resolve_initial_references("NameService")
@@ -57,7 +60,7 @@ class OpenHRPSimulation:
             pass
 
     def createsimulator(self):
-        # find dyamics simulator factory service from the name server
+        # find dynamics simulator factory service from the name server
         try:
             obj = self.ns.resolve([CosNaming.NameComponent("DynamicsSimulatorFactory","")])
             simfactory = obj._narrow(OpenHRP.DynamicsSimulatorFactory)
@@ -114,8 +117,12 @@ class OpenHRPSimulation:
 
         return 0
         
-    def run(self, endtime, logfile = None):
-        meter = progressbar.ProgressBar(maxval=endtime)
+    def run(self, endtime, logfile = None, view = False, progress = True):
+        if progress:
+            meter = progressbar.ProgressBar(maxval=endtime)
+        if view:
+            obj = self.ns.resolve([CosNaming.NameComponent("OnlineViewer","")])
+            viewer = obj._narrow(OpenHRP.OnlineViewer)
         self.sim.initSimulation()
         if logfile:
             f = open(logfile, 'wb')
@@ -127,14 +134,18 @@ class OpenHRPSimulation:
             # store current state to log
             if logfile:
                 p.dump(state)
+            if view:
+                viewer.update(state)
             # quit when end time has reached
             if (state.time > endtime):
                 break
-            meter.update(state.time)
+            if progress:
+                meter.update(state.time)
         if logfile:
             del p
             f.close()
-        meter.finish()
+        if progress:
+            meter.finish()
         return 0
 
     def view(self, logfile):
