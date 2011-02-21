@@ -62,10 +62,15 @@ class ModelItem:
         self.sim = sim
         for n, v in self.angle.iteritems():
             self.sim.setCharacterLinkData(self.name, n, OpenHRP.DynamicsSimulator.JOINT_VALUE, [v])
-        # set transition
-        for n, v in self.transition.iteritems():
-            self.sim.setCharacterLinkData(self.name, n, OpenHRP.DynamicsSimulator.ABS_TRANSFORM, v)
-        # set rotation
-        for n, v in self.rotation.iteritems():
-            self.sim.setCharacterLinkData(self.name, n, OpenHRP.DynamicsSimulator.ABS_TRANSFORM, angletotrans(v))
+        for n in list(set(self.transition.keys() + self.rotation.keys())):
+            t = self.transition.get(n)
+            if t is None:
+                t = [0, 0, 0]
+            r = self.rotation.get(n)
+            if t is None:
+                r = [1,0,0,0,1,0,0,0,1]
+            else:
+                r = angletotrans(r)
+            self.sim.setCharacterLinkData(self.name, n, OpenHRP.DynamicsSimulator.ABS_TRANSFORM, t + r)
+
 
