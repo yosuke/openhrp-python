@@ -27,7 +27,7 @@ class ModelItem:
         self.name = None
         self.url = None
         self.angle = {}
-        self.transition = {}
+        self.translation = {}
         self.rotation = {}
         self.sim = None
     
@@ -43,8 +43,8 @@ class ModelItem:
                 (joint, type) = t.split('.')
                 if type == 'angle':
                     self.angle[joint] = float(p.getAttribute('value').strip())
-                elif type == 'transition':
-                    self.transition[joint] = [float(v) for v in p.getAttribute('value').strip().split(' ')]
+                elif type == 'translation':
+                    self.translation[joint] = [float(v) for v in p.getAttribute('value').strip().split(' ')]
                 elif type == 'rotation':
                     self.rotation[joint] = [float(v) for v in p.getAttribute('value').strip().split(' ')]
         return self
@@ -56,21 +56,27 @@ class ModelItem:
         mm = modelloader.loadBodyInfo(self.url)
         # initialize dynamics simulator
         self.sim.registerCharacter(self.name, mm)
+    
+    def attachviewer(self, viewer):
+        viewer.load(self.name, self.url)
 
     def attachangles(self, sim):
         '''Attach object angles to the dynamics simulator'''
         self.sim = sim
-        for n, v in self.angle.iteritems():
-            self.sim.setCharacterLinkData(self.name, n, OpenHRP.DynamicsSimulator.JOINT_VALUE, [v])
-        for n in list(set(self.transition.keys() + self.rotation.keys())):
-            t = self.transition.get(n)
+        for n in list(set(self.translation.keys() + self.rotation.keys())):
+            t = self.translation.get(n)
             if t is None:
                 t = [0, 0, 0]
             r = self.rotation.get(n)
-            if t is None:
+            if r is None:
                 r = [1,0,0,0,1,0,0,0,1]
             else:
                 r = angletotrans(r)
             self.sim.setCharacterLinkData(self.name, n, OpenHRP.DynamicsSimulator.ABS_TRANSFORM, t + r)
+            self.sim.setCharacterLinkData(self.name, n, OpenHRP.DynamicsSimulator.ABS_VELOCITY, [0,0,0,0,0,0])
+
+        self.sim.setCharacterAllJointModes(self.name, OpenHRP.DynamicsSimulator.HIGH_GAIN_MODE);
+        for n, v in self.angle.iteritems():
+            self.sim.setCharacterLinkData(self.name, n, OpenHRP.DynamicsSimulator.JOINT_VALUE, [v])
 
 

@@ -41,24 +41,27 @@ class CollisionPairItem:
         self.name = str(d.getAttribute('name'))
         for p in d.getElementsByTagName('property'):
             t = p.getAttribute('name')
-            if type == 'objectName1':
-                self.objectName1 = str(p.getAttribute('value'))
-            elif type == 'objectName2':
-                self.objectName2 = str(p.getAttribute('value'))
-            elif type == 'jointName1':
-                self.jointName1 = str(p.getAttribute('value'))
-            elif type == 'jointName2':
-                self.jointName2 = str(p.getAttribute('value'))
-            elif type == 'springDamperModel':
-                self.springDamperModel = (p.getAttribute('value') == 'true')
-            elif type == 'springConstant':
-                self.springConstant = [float(v) for v in p.getAttribute('value').trim().split(' ')]
-            elif type == 'staticFriction':
-                self.staticFriction = float(p.getAttribute('value').trim())
-            elif type == 'slidingFriction':
-                self.slidingFriction = float(p.getAttribute('value').trim())
-            elif type == 'damperConstant':
-                self.damperConstant = [float(v) for v in p.getAttribute('value').trim().split(' ')]
+            v = str(p.getAttribute('value'))
+            if t == 'objectName1':
+                self.objectName1 = v
+            elif t == 'objectName2':
+                self.objectName2 = v
+            elif t == 'jointName1':
+                self.jointName1 = v
+            elif t == 'jointName2':
+                self.jointName2 = v
+            elif t == 'springDamperModel':
+                self.springDamperModel = (v == 'true')
+            elif t == 'springConstant':
+                self.springConstant = [float(vi) for vi in v.split(' ')]
+            elif t == 'staticFriction':
+                self.staticFriction = float(v)
+            elif t == 'slidingFriction':
+                self.slidingFriction = float(v)
+            elif t == 'damperConstant':
+                self.damperConstant = [float(vi) for vi in v.split(' ')]
+            else:
+                print >>sys.stderr, 'cannot parse collision pair type: %s = %s' % (t, v)
         return self
 
     def attach(self, sim):

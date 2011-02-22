@@ -41,6 +41,8 @@ class OpenHRPSimulation:
         self.orb = None
         self.ns = None
         self.sim = None
+        self.viewer = None
+        self.modelloader = None
         
         # initialize CORBA
         self.orb = CORBA.ORB_init([sys.argv[0],
@@ -79,12 +81,26 @@ class OpenHRPSimulation:
             except CORBA.TRANSIENT:
                 pass
         self.createsimulator()
+
+        # find model loader service
+        if self.modelloader is None:
+            try:
+                obj = self.ns.resolve([CosNaming.NameComponent("ModelLoader","")])
+                self.modelloader = obj._narrow(OpenHRP.ModelLoader)
+            except CosNaming.NamingContext.NotFound:
+                print >> sys.stderr, "Cannot find ModelLoader."
+
+        # find online viewer service
+        if self.viewer is None:
+            try:
+                obj = self.ns.resolve([CosNaming.NameComponent("OnlineViewer","")])
+                self.viewer = obj._narrow(OpenHRP.OnlineViewer)
+            except CosNaming.NamingContext.NotFound:
+                print >> sys.stderr, "Cannot find OnlineViewer."
+        #if self.viewer:
+        #    self.viewer.clearData()
     
     def load(self, fname):
-        # find model loader service
-        obj = self.ns.resolve([CosNaming.NameComponent("ModelLoader","")])
-        modelloader = obj._narrow(OpenHRP.ModelLoader)
-
         # parse items in project file
         doc = parse(fname)
         for d in doc.getElementsByTagName('item'):
@@ -99,9 +115,13 @@ class OpenHRPSimulation:
         if len(self.simulationitem) == 0:
             return 1
 
+        return 0
+        
+    def run(self, endtime, logfile = None, view = False, progress = True):
         # load models to dynamic simulator
         for m in self.modelitem:
-            m.attachmodel(self.sim, modelloader)
+            m.attachmodel(self.sim, self.modelloader)
+            #m.attachviewer(self.viewer)
 
         # set simulation parameters
         self.simulationitem[0].attach(self.sim)
@@ -115,27 +135,25 @@ class OpenHRPSimulation:
         for p in self.collisionpairitem:
             p.attach(self.sim)
 
-        return 0
-        
-    def run(self, endtime, logfile = None, view = False, progress = True):
         if progress:
             meter = progressbar.ProgressBar(maxval=endtime)
-        if view:
-            obj = self.ns.resolve([CosNaming.NameComponent("OnlineViewer","")])
-            viewer = obj._narrow(OpenHRP.OnlineViewer)
+
         self.sim.initSimulation()
+        
         if logfile:
             f = open(logfile, 'wb')
             p = pickle.Pickler(f, -1)
         while True:
             # update dynamics simulator
             self.sim.stepSimulation()
+            #self.sim.checkCollision(True)
+            #self.sim.checkIntersection(True)
             state = self.sim.getWorldState()
             # store current state to log
             if logfile:
                 p.dump(state)
             if view:
-                viewer.update(state)
+                self.viewer.drawScene(state)
             # quit when end time has reached
             if (state.time > endtime):
                 break
@@ -149,13 +167,11 @@ class OpenHRPSimulation:
         return 0
 
     def view(self, logfile):
-        obj = self.ns.resolve([CosNaming.NameComponent("OnlineViewer","")])
-        viewer = obj._narrow(OpenHRP.OnlineViewer)
         f = open(logfile, 'rb')
         p = pickle.Unpickler(f)
         while True:
             state = p.load()
-            viewer.update(state)
+            self.viewer.drawScene(state)
         del p
         f.close()
         return 0
